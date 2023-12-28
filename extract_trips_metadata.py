@@ -29,6 +29,9 @@ AWS_REQUEST_TIMEOUT = 6  # TODO: adjust accordingly (16s+)
 AWS_CONNECT_TIMEOUT = 3  # TODO: adjust accordingly (16s+)
 
 DATASETS_S3_PATH = "nyc-tlc/trip data/"
+DATASETS_S3_BASE_URL = "s3://nyc-tlc/trip data"
+DATASETS_CLOUDFRONT_BASE_URL = "https://d37ci6vzurychx.cloudfront.net/trip-data"
+
 DATASETS_BASE_PATH = Path("./data")
 DATASETS_METADATA_PATH = DATASETS_BASE_PATH / "trips-metadata"
 
@@ -39,15 +42,16 @@ LOGGING_LEVEL = logging.INFO
 LOGGING_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 
 HEADERS = [
-    "file_path",
     "file_name",
-    # "file_s3_url",
-    # "file_cloudfront_url",
+    "file_s3_url",
+    "file_cloudfront_url",
     "file_record_type",
     "file_year",
     "file_month",
-    # "file_last_modified_time",
+    "file_modification_time",
     "file_num_rows",
+    "file_num_columns",
+    "file_column_names",
     "file_size_bytes",
     "file_size_mbs",
     "file_size_gbs",
@@ -77,26 +81,30 @@ logging.info("Extracting trips metadata ...")
 
 def extract_trip_file_metadata(trip_fragment):
     """Extract file size and info."""
+    trip_fragment_info = trip_fragment.filesystem.get_file_info(trip_fragment.path)
+
     # file info
-    file_path = trip_fragment.path
-    file_name = file_path.split("/")[-1]
+    file_name = trip_fragment.path.split("/")[-1]
+    file_s3_url = f"{DATASETS_S3_BASE_URL}/{file_name}"
+    file_cloudfront_url = f"{DATASETS_CLOUDFRONT_BASE_URL}/{file_name}"
     file_parts = re.split(r"[_.-]", file_name)
     file_record_type = file_parts[0]
-    file_infos = [file_path, file_name, file_record_type]
+    file_infos = [file_name, file_s3_url, file_cloudfront_url, file_record_type]
 
     # time info
     file_year = int(file_parts[2])
     file_month = int(file_parts[3])
-    # file_last_modified_time = None
-    time_infos = [file_year, file_month]
+    file_modification_time = trip_fragment_info.mtime
+    time_infos = [file_year, file_month, file_modification_time]
 
     # size info
-    trip_fragment_info = trip_fragment.filesystem.get_file_info(trip_fragment.path)
     file_size_bytes = int(trip_fragment_info.size)
     file_size_mbs = file_size_bytes / (1024**2)
     file_size_gbs = file_size_bytes / (1024**3)
     file_num_rows = trip_fragment.metadata.num_rows
-    size_infos = [file_num_rows, file_size_bytes, file_size_mbs, file_size_gbs]
+    file_num_columns = trip_fragment.metadata.num_columns
+    file_column_names = ",".join(trip_fragment.metadata.schema.names)
+    size_infos = [file_num_rows, file_num_columns, file_column_names, file_size_bytes, file_size_mbs, file_size_gbs]
 
     # collect metadata
     file_metadata = file_infos + time_infos + size_infos
@@ -118,5 +126,5 @@ metadata_pth.parent.mkdir(parents=True, exist_ok=True)
 df.to_csv(metadata_pth, index=False)
 logging.info("Saving trips metadata finished.")
 
-# pa._s3fs.finalize_s3()
+# pfs.finalize_s3()
 logging.info("Done.")
