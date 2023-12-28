@@ -12,7 +12,7 @@ Python scripts to download, process, and analyze [NYC Taxi and Limousine Commiss
 - [pyarrow 14.0+](https://github.com/apache/arrow)
 - [pandas 2.0+](https://github.com/pandas-dev/pandas)
 - [geopandas 0.13+](https://github.com/geopandas/geopandas)
-- [upyterlab>=4.0+](https://github.com/jupyterlab/jupyterlab)
+- [jupyterlab>=4.0+](https://github.com/jupyterlab/jupyterlab)
 
 ## Usage
 
@@ -38,6 +38,11 @@ export AWS_REGION="us-east-1"
 - To extract `trips metadata (i.e year, month, size etc.)`, run:
 ```sh
 python extract_trips_metadata.py
+```
+
+- To extract `zones data (i.e taxi+_zone_lookup, taxi_zones etc.)`, run:
+```sh
+python extract_zones_data.py
 ```
 
 
