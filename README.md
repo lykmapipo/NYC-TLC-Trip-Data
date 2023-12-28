@@ -12,6 +12,7 @@ Python scripts to download, process, and analyze [NYC Taxi and Limousine Commiss
 - [pyarrow 14.0+](https://github.com/apache/arrow)
 - [pandas 2.0+](https://github.com/pandas-dev/pandas)
 - [geopandas 0.13+](https://github.com/geopandas/geopandas)
+- [upyterlab>=4.0+](https://github.com/jupyterlab/jupyterlab)
 
 ## Usage
 
