@@ -45,6 +45,16 @@ python extract_trips_metadata.py
 python extract_zones_data.py
 ```
 
+- To extract `trips data`, run:
+```sh
+python extract_trips_data.py -t yellow -y 2023 -m 1 -m 2
+```
+
+- To display extract `trips data` help, run:
+```sh
+python extract_trips_data.py --help
+```
+
 
 ## Contribute
 

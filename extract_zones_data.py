@@ -29,8 +29,8 @@ LOGGING_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 logging.basicConfig(level=LOGGING_LEVEL, format=LOGGING_FORMAT)
 
 
-def dowload_file(url=None, destination=None, chunk_size=1024, **kwargs):
-    """Dowload a file from a given url."""
+def download_file(url=None, destination=None, chunk_size=1024, **kwargs):
+    """Download a file from a given url."""
     logging.info(f"Downloading {url} ...")
 
     with requests.get(url, stream=True, **kwargs) as response:
@@ -44,17 +44,17 @@ def dowload_file(url=None, destination=None, chunk_size=1024, **kwargs):
     logging.info(f"Downloading {url} finished.")
 
 
-def safe_dowload_file(url=None, **kwargs):
-    """Dowload a file only if it doesn't exist or it has been updated remotely."""
+def safe_download_file(url=None, **kwargs):
+    """Download a file only if it doesn't exist or it has been updated remotely."""
     destination = Path(urlparse(url).path).name
     destination = Path(DATASETS_ZONES_DATA_PATH / destination)
     destination = destination.expanduser().resolve()
     destination.parent.mkdir(exist_ok=True, parents=True)
 
-    # file not exists, try dowload
+    # file not exists, try download
     if not destination.exists():
         logging.info(f"{destination.name} does not exists. Try downloading ...")
-        dowload_file(url=url, destination=destination, **kwargs)
+        download_file(url=url, destination=destination, **kwargs)
 
     # file exists, try update
     else:
@@ -69,7 +69,7 @@ def safe_dowload_file(url=None, **kwargs):
             )
 
         if server_last_modified_time > local_last_modified_time:
-            dowload_file(url=url, destination=destination, **kwargs)
+            download_file(url=url, destination=destination, **kwargs)
         else:
             logging.info(f"{destination.name} is up to date.")
 
@@ -77,11 +77,11 @@ def safe_dowload_file(url=None, **kwargs):
 logging.info("Start.")
 
 logging.info("Downloading taxi zone lookup file ...")
-safe_dowload_file(DATASETS_ZONE_LOOKUP_DOWLOAD_URL)
+safe_download_file(DATASETS_ZONE_LOOKUP_DOWLOAD_URL)
 logging.info("Downloading taxi zone lookup file finished.")
 
 logging.info("Downloading taxi zones file ...")
-safe_dowload_file(DATASETS_ZONES_DOWLOAD_URL)
+safe_download_file(DATASETS_ZONES_DOWLOAD_URL)
 logging.info("Downloading taxi zones file finished.")
 
 logging.info("Done.")
