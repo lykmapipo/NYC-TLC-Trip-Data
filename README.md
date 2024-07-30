@@ -2,7 +2,7 @@
 
 Python scripts to download, process, and analyze [NYC Taxi and Limousine Commission Trip Record Data](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page).
 
-> 👋 This repository's maintainer is available to hire for NYC TLC Trip data-engineering consulting projects. To get a cost estimate, send email to lallyelias87@gmail.com (for projects of any size or complexity).
+> 👋 This repository's maintainer is available to hire for [Python](https://www.python.org/)/[Apache Spark](https://spark.apache.org/)/[Apache Arrow](https://arrow.apache.org/docs/index.html)/[Data Engineering](https://en.wikipedia.org/wiki/Data_engineering) consulting projects. To get a cost estimate, send email to lallyelias87@gmail.com (for projects of any size or complexity).
 
 ## Requirements
 
