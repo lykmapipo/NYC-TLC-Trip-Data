@@ -13,6 +13,7 @@ Python scripts to download, process, and analyze [NYC Taxi and Limousine Commiss
 - [pandas 2.0+](https://github.com/pandas-dev/pandas)
 - [geopandas 0.13+](https://github.com/geopandas/geopandas)
 - [jupyterlab>=4.0+](https://github.com/jupyterlab/jupyterlab)
+- [pyspark 3.5+](https://github.com/apache/spark/tree/master/python)
 
 ## Usage
 
