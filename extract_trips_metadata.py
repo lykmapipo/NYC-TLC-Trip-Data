@@ -240,7 +240,7 @@ def extract_trip_file_metadata(fragment=None, **kwargs):
     show_default=True,
     help="Trip months to extract.",
 )
-def main(source="s3", record_type=None, year=None, months=None, **kwargs):
+def main(source=RECORD_SOURCE_S3, record_type=None, year=None, months=None, **kwargs):
     """Extract NYC TLC trips metadata from AWS S3 Bucket or NYC TLC Trip Data website.
 
     Examples:
