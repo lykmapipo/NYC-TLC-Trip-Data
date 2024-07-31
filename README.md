@@ -7,7 +7,7 @@ Python scripts to download, process, and analyze [NYC Taxi and Limousine Commiss
 ## Requirements
 
 - [Python 3.8+](https://www.python.org/)
-- [pip 23.3+](https://github.com/pypa/pip)
+- [pip 24.2+](https://github.com/pypa/pip)
 - [joblib 1.3+](https://github.com/joblib/joblib)
 - [pyarrow 14.0+](https://github.com/apache/arrow)
 - [pandas 2.0+](https://github.com/pandas-dev/pandas)
@@ -38,7 +38,7 @@ export AWS_REGION="us-east-1"
 
 - To extract `trips metadata (i.e year, month, size etc.)`, run:
 ```sh
-python extract_trips_metadata.py
+python extract_trips_metadata.py -s web -t yellow -y 2024
 ```
 
 - To extract `zones data (i.e taxi+_zone_lookup, taxi_zones etc.)`, run:
