@@ -165,3 +165,5 @@ cython_debug/
 
 # Other files and folders
 tmp/
+data/trips-metadata/web
+data/trips-metadata/s3

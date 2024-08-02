@@ -4,11 +4,99 @@ Re-usable utilities.
 """
 
 import logging
+import re
 from email.utils import parsedate_to_datetime
 
+import pyarrow.dataset as pds
+import pyarrow.fs as pfs
+import requests
+from bs4 import BeautifulSoup
 from fsspec.implementations.http import HTTPFileSystem
 
-__all__ = ["ArrowHTTPFileSystem"]
+import conf
+
+__all__ = [
+    "ArrowHTTPFileSystem",
+    "configure_logging",
+    "discover_dataset",
+    "is_allowed_fragment",
+    "prepare_s3_fs",
+    "prepare_web_fs",
+    "scrape_web_file_urls",
+]
+
+
+def configure_logging():
+    """Configure basic logging."""
+    if len(logging.getLogger().handlers) == 0:
+        logging.basicConfig(
+            level=conf.LOGGING_LEVEL,
+            format=conf.LOGGING_FORMAT,
+        )
+
+
+def prepare_s3_fs():
+    """Prepare PyArrow AWS S3 filesystem."""
+    logging.info("Prepare AWS S3 filesystems ...")
+    s3_fs = pfs.S3FileSystem(
+        access_key=conf.AWS_ACCESS_KEY_ID,
+        secret_key=conf.AWS_SECRET_ACCESS_KEY,
+        region=conf.AWS_REGION,
+        scheme=conf.AWS_SCHEME,
+        request_timeout=conf.AWS_REQUEST_TIMEOUT,
+        connect_timeout=conf.AWS_CONNECT_TIMEOUT,
+    )
+    logging.info("Prepare AWS S3 filesystems finished.")
+    return s3_fs
+
+
+def prepare_web_fs():
+    """Prepare PyArrow HTTP filesystem using fsspec."""
+    logging.info("Prepare Web filesystems ...")
+    web_fs = ArrowHTTPFileSystem()
+    web_fs = pfs.PyFileSystem(pfs.FSSpecHandler(web_fs))
+    logging.info("Prepare Web filesystems finished.")
+    return web_fs
+
+
+def discover_dataset(source=None, filesystem=None):
+    """Discover PyArrow dataset."""
+    logging.info("Discover dataset ...")
+    ds = pds.dataset(
+        source,
+        format=conf.DATASET_FORMAT,
+        partitioning=conf.DATASET_PARTITIONING,
+        filesystem=filesystem,
+    )
+    logging.info("Discover dataset finished.")
+    return ds
+
+
+def scrape_web_file_urls():
+    """Scrape file urls from NYC TLC Trip Data website."""
+    logging.info("Scrape web file urls ...")
+    file_urls = requests.get(conf.DATASET_WEB_URL)
+    file_urls = BeautifulSoup(file_urls.content, "html.parser")
+    file_urls = file_urls.select(conf.DATASET_WEB_FILE_URL_CSS_SELECTOR)
+    file_urls = [file_url.get("href").strip() for file_url in file_urls if file_url]
+    logging.info("Scrape web file urls finished.")
+    return file_urls
+
+
+def is_allowed_fragment(fragment=None, **kwargs):
+    """Filter allowed dataset fragment."""
+    file_name = fragment.path.split("/")[-1]
+    file_parts = re.split(r"[_.-]", file_name)
+    file_record_type = file_parts[0]
+    file_year = int(file_parts[2])
+    file_month = int(file_parts[3])
+
+    is_allowed_fragment = (
+        (file_record_type == kwargs.get("record_type"))
+        and (file_year == kwargs.get("year"))
+        and (file_month in (kwargs.get("months") or []))
+    )
+    return is_allowed_fragment
 
 
 class ArrowHTTPFileSystem(HTTPFileSystem):

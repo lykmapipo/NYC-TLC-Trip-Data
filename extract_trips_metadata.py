@@ -9,66 +9,25 @@ Usage::
 
 """
 
-import datetime
 import logging
-import os
 import re
-from pathlib import Path
 
 import click
 import pandas as pd
 import pyarrow as pa  # noqa
-import pyarrow.dataset as pds
-import pyarrow.fs as pfs
-import requests
-from bs4 import BeautifulSoup
 from joblib import Parallel, delayed
 
-from base import ArrowHTTPFileSystem
+import conf
+from base import (
+    configure_logging,
+    discover_dataset,
+    is_allowed_fragment,
+    prepare_s3_fs,
+    prepare_web_fs,
+    scrape_web_file_urls,
+)
 
-TODAY = datetime.date.today()
-
-WEB_SOURCE_URL = "https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page"
-WEB_FILE_URL_CSS_SELECTOR = "a[href*='trip-data']"
-
-AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
-AWS_REGION = os.environ.get("AWS_REGION") or "us-east-1"
-AWS_SCHEME = "https"
-AWS_REQUEST_TIMEOUT = 6  # TODO: adjust accordingly (16s+)
-AWS_CONNECT_TIMEOUT = 3  # TODO: adjust accordingly (16s+)
-
-DATASETS_S3_PATH = "nyc-tlc/trip data/"
-DATASETS_S3_BASE_URL = "s3://nyc-tlc/trip data"
-DATASETS_CLOUDFRONT_BASE_URL = "https://d37ci6vzurychx.cloudfront.net/trip-data"
-
-DATASETS_BASE_PATH = Path("./data")
-DATASETS_METADATA_PATH = DATASETS_BASE_PATH / "trips-metadata"
-
-PARALLEL_NUM_JOBS = -1
-PARALLEL_VERBOSITY_LEVEL = 10
-
-LOGGING_LEVEL = logging.INFO
-LOGGING_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
-
-RECORD_TYPES_FHV = "fhv"
-RECORD_TYPES_FHVHV = "fhvhv"
-RECORD_TYPES_GREEN = "green"
-RECORD_TYPES_YELLOW = "yellow"
-RECORD_TYPES = [
-    RECORD_TYPES_FHV,
-    RECORD_TYPES_FHVHV,
-    RECORD_TYPES_GREEN,
-    RECORD_TYPES_YELLOW,
-]
-RECORD_YEARS = list(range(2009, TODAY.year + 1))
-RECORD_MONTHS = list(range(1, 13))
-
-RECORD_SOURCE_WEB = "web"
-RECORD_SOURCE_S3 = "s3"
-RECORD_SOURCES = [RECORD_SOURCE_WEB, RECORD_SOURCE_S3]
-
-HEADERS = [
+METADATA_HEADERS = [
     "file_name",
     "file_s3_url",
     "file_cloudfront_url",
@@ -82,46 +41,15 @@ HEADERS = [
     "file_size_bytes",
     "file_size_mbs",
     "file_size_gbs",
+    "file_metadata_source",
 ]
-
-
-def _configure_logging():
-    """Configure basic multiprocessing loggging."""
-    if len(logging.getLogger().handlers) == 0:
-        logging.basicConfig(level=LOGGING_LEVEL, format=LOGGING_FORMAT)
-
-
-def _prepare_s3_filesystem():
-    """Prepare PyArrow AWS S3 filesystem."""
-    logging.info("Prepare AWS S3 filesystems ...")
-    s3_fs = pfs.S3FileSystem(
-        access_key=AWS_ACCESS_KEY_ID,
-        secret_key=AWS_SECRET_ACCESS_KEY,
-        region=AWS_REGION,
-        scheme=AWS_SCHEME,
-        request_timeout=AWS_REQUEST_TIMEOUT,
-        connect_timeout=AWS_CONNECT_TIMEOUT,
-    )
-    logging.info("Prepare AWS S3 filesystems finished.")
-    return s3_fs
-
-
-def _prepare_web_filesystem():
-    """Prepare PyArrow HTTP filesystem using fsspec."""
-    logging.info("Prepare Web filesystems ...")
-    web_fs = ArrowHTTPFileSystem()
-    web_fs = pfs.PyFileSystem(pfs.FSSpecHandler(web_fs))
-    logging.info("Prepare Web filesystems finished.")
-    return web_fs
 
 
 def _discover_s3_dataset(**kwargs):
     """Discover metadata from AWS S3."""
-    s3_fs = _prepare_s3_filesystem()
-    ds = pds.dataset(
-        DATASETS_S3_PATH,
-        format="parquet",
-        partitioning="hive",
+    s3_fs = prepare_s3_fs()
+    ds = discover_dataset(
+        source=conf.DATASET_AWS_S3_PATH,
         filesystem=s3_fs,
     )
     return ds
@@ -129,50 +57,51 @@ def _discover_s3_dataset(**kwargs):
 
 def _discover_web_dataset(**kwargs):
     """Discover metadata from NYC TLC Trip Data website and AWS CloudFront."""
-    logging.info("Requesting web page ...")
-    file_urls = requests.get(WEB_SOURCE_URL)
-    logging.info("Requesting page finished.")
-
-    logging.info("Parsing web file urls ...")
-    file_urls = BeautifulSoup(file_urls.content, "html.parser")
-    file_urls = file_urls.select(WEB_FILE_URL_CSS_SELECTOR)
-    file_urls = [file_url.get("href").strip() for file_url in file_urls if file_url]
-    logging.info("Parsing web file urls finished.")
-
-    web_fs = _prepare_web_filesystem()
-    ds = pds.dataset(
-        file_urls,
-        format="parquet",
-        partitioning="hive",
+    file_urls = scrape_web_file_urls()
+    web_fs = prepare_web_fs()
+    ds = discover_dataset(
+        source=file_urls,
         filesystem=web_fs,
     )
     return ds
 
 
-def _filter_allowed_fragment(fragment=None, **kwargs):
-    """Filter allowed fragments."""
-    file_name = fragment.path.split("/")[-1]
-    file_parts = re.split(r"[_.-]", file_name)
-    file_record_type = file_parts[0]
-    file_year = int(file_parts[2])
-    file_month = int(file_parts[3])
+def _discover_trips_metadata(**kwargs):
+    """Discover trips fragments (files)."""
+    logging.info("Discovering trips metadata ...")
 
-    is_allowed_fragment = (
-        (file_record_type == kwargs.get("record_type"))
-        and (file_year == kwargs.get("year"))
-        and (file_month in (kwargs.get("months") or []))
+    source = kwargs.get("source")
+    record_type = kwargs.get("record_type")
+    year = kwargs.get("year")
+    months = kwargs.get("months")
+
+    trip_dataset = (
+        _discover_s3_dataset()
+        if source == conf.RECORD_SOURCE_S3
+        else _discover_web_dataset()
     )
-    return is_allowed_fragment
+    trip_fragments = []
+    for trip_fragment in trip_dataset.get_fragments():
+        allowed_fragment = is_allowed_fragment(
+            fragment=trip_fragment,
+            record_type=record_type,
+            year=year,
+            months=months,
+        )
+        if allowed_fragment:
+            trip_fragments.append(trip_fragment)
+    logging.info("Discovering trips metadata finished.")
+    return trip_fragments
 
 
-def extract_trip_file_metadata(fragment=None, **kwargs):
-    """Extract file size and info."""
+def _extract_trip_metadata(fragment=None, **kwargs):
+    """Extract trip file metadata."""
     fragment_info = fragment.filesystem.get_file_info(fragment.path)
 
     # file info
     file_name = fragment.path.split("/")[-1]
-    file_s3_url = f"{DATASETS_S3_BASE_URL}/{file_name}"
-    file_cloudfront_url = f"{DATASETS_CLOUDFRONT_BASE_URL}/{file_name}"
+    file_s3_url = f"{conf.DATASET_AWS_S3_BASE_URL}/{file_name}"
+    file_cloudfront_url = f"{conf.DATASET_AWS_CLOUDFRONT_BASE_URL}/{file_name}"
     file_parts = re.split(r"[_.-]", file_name)
     file_record_type = file_parts[0]
     file_infos = [file_name, file_s3_url, file_cloudfront_url, file_record_type]
@@ -190,6 +119,7 @@ def extract_trip_file_metadata(fragment=None, **kwargs):
     file_num_rows = fragment.metadata.num_rows
     file_num_columns = fragment.metadata.num_columns
     file_column_names = ",".join(fragment.metadata.schema.names)
+    file_metadata_source = kwargs.get("source") or None
     size_infos = [
         file_num_rows,
         file_num_columns,
@@ -197,35 +127,68 @@ def extract_trip_file_metadata(fragment=None, **kwargs):
         file_size_bytes,
         file_size_mbs,
         file_size_gbs,
+        file_metadata_source,
     ]
 
-    # collect metadata
+    # collect trip file metadata
     file_metadata = file_infos + time_infos + size_infos
-    return dict(zip(HEADERS, file_metadata))
+    return dict(zip(METADATA_HEADERS, file_metadata))
+
+
+def _extract_trips_metadata(trip_fragments=None, **kwargs):
+    """Extract each trip file metadata."""
+    logging.info("Extracting trips metadata ...")
+    trips_metadata = Parallel(
+        n_jobs=conf.PARALLEL_NUM_JOBS,
+        verbose=conf.PARALLEL_VERBOSITY_LEVEL,
+    )(
+        delayed(_extract_trip_metadata)(fragment=trip_fragment, **kwargs)
+        for trip_fragment in trip_fragments
+    )
+    logging.info("Extracting trips metadata finished.")
+    return trips_metadata
+
+
+def _save_trips_metadata(trips_metadata=None, **kwargs):
+    """Save trips metadata into a file."""
+    source = kwargs.get("source")
+    record_type = kwargs.get("record_type")
+    year = kwargs.get("year")
+
+    file_name = f"{record_type}_tripmetadata_{year}.csv"
+    file_path = conf.DATASET_LOCAL_METADATA_PATH / source
+    file_path = file_path / str(conf.TODAY) / file_name
+    logging.info(f"Saving trips metadata at {file_path} ...")
+    file_path = file_path.expanduser().resolve()
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    df = pd.DataFrame(trips_metadata)
+    df.to_csv(file_path, index=False)
+    logging.info("Saving trips metadata finished.")
 
 
 @click.command()
 @click.option(
     "--source",
     "-s",
-    type=click.Choice(RECORD_SOURCES),
-    default=RECORD_SOURCE_S3,
+    type=click.Choice(conf.RECORD_SOURCES),
+    default=conf.RECORD_SOURCE_WEB,
     show_default=True,
     help="Trips remote source.",
 )
 @click.option(
     "--record-type",
     "-t",
-    type=click.Choice(RECORD_TYPES),
-    default=RECORD_TYPES_YELLOW,
+    type=click.Choice(conf.RECORD_TYPES),
+    default=conf.RECORD_TYPES_YELLOW,
     show_default=True,
     help="Trip record type to extract.",
 )
 @click.option(
     "--year",
     "-y",
-    type=click.IntRange(min=min(RECORD_YEARS), max=max(RECORD_YEARS)),
-    default=max(RECORD_YEARS),
+    type=click.IntRange(min=min(conf.RECORD_YEARS), max=max(conf.RECORD_YEARS)),
+    default=max(conf.RECORD_YEARS),
     show_default=True,
     help="Trip year to extract.",
 )
@@ -233,66 +196,34 @@ def extract_trip_file_metadata(fragment=None, **kwargs):
     "--months",
     "-m",
     multiple=True,
-    type=click.IntRange(min=min(RECORD_MONTHS), max=max(RECORD_MONTHS)),
-    default=list(RECORD_MONTHS),
+    type=click.IntRange(min=min(conf.RECORD_MONTHS), max=max(conf.RECORD_MONTHS)),
+    default=list(conf.RECORD_MONTHS),
     show_default=True,
     help="Trip months to extract.",
 )
-def main(source=RECORD_SOURCE_S3, record_type=None, year=None, months=None, **kwargs):
+def main(**kwargs):
     """Extract NYC TLC trips metadata from AWS S3 Bucket or NYC TLC Trip Data website.
 
     Examples:
 
-    Extracting metadata from AWS S3 Bucket (recommended):
-    python extract_trips_metadata.py -s s3 -t yellow -y 2024
+    1. Extracting metadata from AWS S3 Bucket (recommended):
 
-    Extracting metadata from NYC TLC Trip Data website:
-    python extract_trips_metadata.py -s web -t yellow -y 2024
+    >>> python extract_trips_metadata.py -s s3 -t yellow -y 2024
+
+    2. Extracting metadata from NYC TLC Trip Data website:
+
+    >>> python extract_trips_metadata.py -s web -t yellow -y 2024
 
     """
-    _configure_logging()
+    configure_logging()
     logging.info("Start.")
 
-    logging.info("Discovering trips metadata ...")
-    trip_dataset = (
-        _discover_web_dataset()
-        if source == RECORD_SOURCE_WEB
-        else _discover_s3_dataset()
+    trip_fragments = _discover_trips_metadata(**kwargs)
+    trips_metadata = _extract_trips_metadata(
+        trip_fragments=trip_fragments,
+        **kwargs,
     )
-    trip_fragments = []
-    for trip_fragment in trip_dataset.get_fragments():
-        is_allowed_fragment = _filter_allowed_fragment(
-            fragment=trip_fragment,
-            record_type=record_type,
-            year=year,
-            months=months,
-        )
-        if is_allowed_fragment:
-            trip_fragments.append(trip_fragment)
-    logging.info("Discovering trips metadata finished.")
-
-    logging.info("Extracting trips metadata ...")
-    metadata = Parallel(n_jobs=PARALLEL_NUM_JOBS, verbose=PARALLEL_VERBOSITY_LEVEL)(
-        delayed(extract_trip_file_metadata)(
-            fragment=trip_fragment,
-            source=source,
-            record_type=record_type,
-            year=year,
-            months=months,
-        )
-        for trip_fragment in trip_fragments
-    )
-    metadata_df = pd.DataFrame(metadata)
-    logging.info("Extracting trips metadata finished.")
-
-    # save trips metadata
-    file_name = f"{TODAY}_{source}_{record_type}_tripmetadata_{year}.csv"
-    metadata_pth = DATASETS_METADATA_PATH / file_name
-    logging.info(f"Saving trips metadata at {metadata_pth} ...")
-    metadata_pth = metadata_pth.expanduser().resolve()
-    metadata_pth.parent.mkdir(parents=True, exist_ok=True)
-    metadata_df.to_csv(metadata_pth, index=False)
-    logging.info("Saving trips metadata finished.")
+    _save_trips_metadata(metadata=trips_metadata, **kwargs)
 
     logging.info("Done.")
 
