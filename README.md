@@ -29,31 +29,26 @@ cd NYC-TLC-Trip-Data
 pip install -r requirements.txt
 ```
 
-- Set environment variables
+- Set environment variables (if using AWS S3)
 ```sh
 export AWS_ACCESS_KEY_ID="<YOUR_AWS_ACCESS_KEY>"
 export AWS_SECRET_ACCESS_KEY="<YOUR_AWS_SECRET_ACCESS_KEY>"
 export AWS_REGION="us-east-1"
 ```
 
-- To extract `trips metadata (i.e year, month, size etc.)`, run:
+- To extract [trips metadata](https://github.com/lykmapipo/NYC-TLC-Trip-Data/tree/main/data/trips-metadata), run:
 ```sh
 python extract_trips_metadata.py -s web -t yellow -y 2024
 ```
 
-- To extract `zones data (i.e taxi+_zone_lookup, taxi_zones etc.)`, run:
+- To extract [zones data `(i.e taxi+_zone_lookup, taxi_zones etc.)`](https://github.com/lykmapipo/NYC-TLC-Trip-Data/tree/main/data/zones-data), run:
 ```sh
 python extract_zones_data.py
 ```
 
-- To extract `trips data`, run:
+- To extract [trips data](https://github.com/lykmapipo/NYC-TLC-Trip-Data/tree/main/data/trips-data), run:
 ```sh
 python extract_trips_data.py -s web -t yellow -y 2024 -m 1 -m 2
-```
-
-- To display extract `trips data` help, run:
-```sh
-python extract_trips_data.py --help
 ```
 
 
