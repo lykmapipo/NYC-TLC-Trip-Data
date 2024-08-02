@@ -126,7 +126,8 @@ def _extract_trip_metadata(fragment=None, **kwargs):
 
     # collect trip file metadata
     file_metadata = file_infos + time_infos + size_infos
-    return dict(zip(METADATA_HEADERS, file_metadata))
+    file_metadata = dict(zip(METADATA_HEADERS, file_metadata))
+    return file_metadata
 
 
 def _extract_trips_metadata(trip_fragments=None, **kwargs):
@@ -217,7 +218,7 @@ def main(**kwargs):
         trip_fragments=trip_fragments,
         **kwargs,
     )
-    _save_trips_metadata(metadata=trips_metadata, **kwargs)
+    _save_trips_metadata(trips_metadata=trips_metadata, **kwargs)
 
     logging.info("Done.")
 
