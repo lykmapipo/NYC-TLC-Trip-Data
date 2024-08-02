@@ -94,7 +94,8 @@ def scrape_web_file_urls():
 
 def is_allowed_fragment(fragment=None, **kwargs):
     """Filter allowed dataset fragment."""
-    file_name = fragment.path.split("/")[-1]
+    file_name = fragment if isinstance(fragment, str) else fragment.path
+    file_name = file_name.split("/")[-1]
     file_parts = re.split(r"[_.-]", file_name)
     file_record_type = file_parts[0]
     file_year = int(file_parts[2])

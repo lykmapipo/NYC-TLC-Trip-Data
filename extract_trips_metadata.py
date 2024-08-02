@@ -58,6 +58,11 @@ def _discover_s3_dataset(**kwargs):
 def _discover_web_dataset(**kwargs):
     """Discover metadata from NYC TLC Trip Data website and AWS CloudFront."""
     file_urls = scrape_web_file_urls()
+    file_urls = [
+        file_url
+        for file_url in file_urls
+        if is_allowed_fragment(fragment=file_url, **kwargs)
+    ]
     web_fs = prepare_web_fs()
     ds = discover_dataset(
         source=file_urls,
@@ -72,9 +77,9 @@ def _discover_trips_metadata(**kwargs):
 
     source = kwargs.get("source")
     trip_dataset = (
-        _discover_s3_dataset()
+        _discover_s3_dataset(**kwargs)
         if source == conf.RECORD_SOURCE_S3
-        else _discover_web_dataset()
+        else _discover_web_dataset(**kwargs)
     )
     trip_fragments = []
     for trip_fragment in trip_dataset.get_fragments():
@@ -146,13 +151,11 @@ def _extract_trips_metadata(trip_fragments=None, **kwargs):
 
 def _save_trips_metadata(trips_metadata=None, **kwargs):
     """Save trips metadata into a file."""
-    source = kwargs.get("source")
     record_type = kwargs.get("record_type")
     year = kwargs.get("year")
 
     file_name = f"{record_type}_tripmetadata_{year}.csv"
-    file_path = conf.DATASET_LOCAL_METADATA_PATH / source
-    file_path = file_path / str(conf.TODAY) / file_name
+    file_path = conf.DATASET_LOCAL_METADATA_PATH / file_name
     logging.info(f"Saving trips metadata at {file_path} ...")
     file_path = file_path.expanduser().resolve()
     file_path.parent.mkdir(parents=True, exist_ok=True)
