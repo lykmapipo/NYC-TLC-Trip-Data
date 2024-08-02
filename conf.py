@@ -34,6 +34,7 @@ DATASET_PARTITIONING = "hive"
 DATASET_LOCAL_BASE_PATH = Path("./data")
 DATASET_LOCAL_METADATA_PATH = DATASET_LOCAL_BASE_PATH / "trips-metadata"
 DATASET_LOCAL_TRIPS_DATA_PATH = DATASET_LOCAL_BASE_PATH / "trips-data"
+DATASET_LOCAL_ZONES_DATA_PATH = DATASET_LOCAL_BASE_PATH / "zones-data"
 
 DATASET_WEB_URL = "https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page"
 DATASET_WEB_FILE_URL_CSS_SELECTOR = "a[href*='trip-data']"
@@ -41,6 +42,11 @@ DATASET_WEB_FILE_URL_CSS_SELECTOR = "a[href*='trip-data']"
 DATASET_AWS_S3_PATH = "nyc-tlc/trip data/"
 DATASET_AWS_S3_BASE_URL = "s3://nyc-tlc/trip data"
 DATASET_AWS_CLOUDFRONT_BASE_URL = "https://d37ci6vzurychx.cloudfront.net/trip-data"
+
+DATASET_ZONE_LOOKUP_DOWNLOAD_URL = (
+    f"{DATASET_AWS_CLOUDFRONT_BASE_URL}/misc/taxi+_zone_lookup.csv"
+)
+DATASET_ZONES_DOWNLOAD_URL = f"{DATASET_AWS_CLOUDFRONT_BASE_URL}/misc/taxi_zones.zip"
 
 RECORD_SOURCE_WEB = "web"
 RECORD_SOURCE_S3 = "s3"

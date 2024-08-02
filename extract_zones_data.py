@@ -16,18 +16,8 @@ from urllib.parse import urlparse
 
 import requests
 
-DATASETS_BASE_DOWLOAD_URL = "https://d37ci6vzurychx.cloudfront.net/misc"
-DATASETS_ZONE_LOOKUP_DOWLOAD_URL = f"{DATASETS_BASE_DOWLOAD_URL}/taxi+_zone_lookup.csv"
-DATASETS_ZONES_DOWLOAD_URL = f"{DATASETS_BASE_DOWLOAD_URL}/taxi_zones.zip"
-
-DATASETS_BASE_PATH = Path("./data")
-DATASETS_ZONES_DATA_PATH = DATASETS_BASE_PATH / "zones-data"
-
-LOGGING_LEVEL = logging.INFO
-LOGGING_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
-
-# init
-logging.basicConfig(level=LOGGING_LEVEL, format=LOGGING_FORMAT)
+import conf
+from base import configure_logging
 
 
 def download_file(url=None, destination=None, chunk_size=1024, **kwargs):
@@ -48,7 +38,7 @@ def download_file(url=None, destination=None, chunk_size=1024, **kwargs):
 def safe_download_file(url=None, **kwargs):
     """Download a file only if it doesn't exist or it has been updated remotely."""
     destination = Path(urlparse(url).path).name
-    destination = Path(DATASETS_ZONES_DATA_PATH / destination)
+    destination = Path(conf.DATASET_LOCAL_ZONES_DATA_PATH / destination)
     destination = destination.expanduser().resolve()
     destination.parent.mkdir(exist_ok=True, parents=True)
 
@@ -77,14 +67,15 @@ def safe_download_file(url=None, **kwargs):
             logging.info(f"{destination.name} is up to date.")
 
 
+configure_logging()
 logging.info("Start.")
 
 logging.info("Downloading taxi zone lookup file ...")
-safe_download_file(DATASETS_ZONE_LOOKUP_DOWLOAD_URL)
+safe_download_file(conf.DATASET_ZONE_LOOKUP_DOWNLOAD_URL)
 logging.info("Downloading taxi zone lookup file finished.")
 
 logging.info("Downloading taxi zones file ...")
-safe_download_file(DATASETS_ZONES_DOWLOAD_URL)
+safe_download_file(conf.DATASET_ZONES_DOWNLOAD_URL)
 logging.info("Downloading taxi zones file finished.")
 
 logging.info("Done.")
