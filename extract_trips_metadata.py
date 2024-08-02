@@ -71,10 +71,6 @@ def _discover_trips_metadata(**kwargs):
     logging.info("Discovering trips metadata ...")
 
     source = kwargs.get("source")
-    record_type = kwargs.get("record_type")
-    year = kwargs.get("year")
-    months = kwargs.get("months")
-
     trip_dataset = (
         _discover_s3_dataset()
         if source == conf.RECORD_SOURCE_S3
@@ -84,9 +80,7 @@ def _discover_trips_metadata(**kwargs):
     for trip_fragment in trip_dataset.get_fragments():
         allowed_fragment = is_allowed_fragment(
             fragment=trip_fragment,
-            record_type=record_type,
-            year=year,
-            months=months,
+            **kwargs,
         )
         if allowed_fragment:
             trip_fragments.append(trip_fragment)

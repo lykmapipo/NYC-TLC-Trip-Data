@@ -20,6 +20,7 @@ __all__ = [
     "configure_logging",
     "discover_dataset",
     "is_allowed_fragment",
+    "prepare_local_fs",
     "prepare_s3_fs",
     "prepare_web_fs",
     "scrape_web_file_urls",
@@ -35,9 +36,17 @@ def configure_logging():
         )
 
 
+def prepare_local_fs():
+    """Prepare PyArrow local filesystem."""
+    logging.info("Prepare local filesystem ...")
+    local_fs = pfs.LocalFileSystem()
+    logging.info("Prepare local filesystem finished.")
+    return local_fs
+
+
 def prepare_s3_fs():
     """Prepare PyArrow AWS S3 filesystem."""
-    logging.info("Prepare AWS S3 filesystems ...")
+    logging.info("Prepare AWS S3 filesystem ...")
     s3_fs = pfs.S3FileSystem(
         access_key=conf.AWS_ACCESS_KEY_ID,
         secret_key=conf.AWS_SECRET_ACCESS_KEY,
@@ -46,16 +55,16 @@ def prepare_s3_fs():
         request_timeout=conf.AWS_REQUEST_TIMEOUT,
         connect_timeout=conf.AWS_CONNECT_TIMEOUT,
     )
-    logging.info("Prepare AWS S3 filesystems finished.")
+    logging.info("Prepare AWS S3 filesystem finished.")
     return s3_fs
 
 
 def prepare_web_fs():
     """Prepare PyArrow HTTP filesystem using fsspec."""
-    logging.info("Prepare Web filesystems ...")
+    logging.info("Prepare Web filesystem ...")
     web_fs = ArrowHTTPFileSystem()
     web_fs = pfs.PyFileSystem(pfs.FSSpecHandler(web_fs))
-    logging.info("Prepare Web filesystems finished.")
+    logging.info("Prepare Web filesystem finished.")
     return web_fs
 
 

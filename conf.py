@@ -18,6 +18,9 @@ LOGGING_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 PARALLEL_NUM_JOBS = -1
 PARALLEL_VERBOSITY_LEVEL = 10
 
+DOWNLOAD_CHUNK_SIZE = 1048576  # 1MB
+DOWNLOAD_USE_THREADS = True
+
 AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
 AWS_REGION = os.environ.get("AWS_REGION") or "us-east-1"
@@ -30,6 +33,7 @@ DATASET_PARTITIONING = "hive"
 
 DATASET_LOCAL_BASE_PATH = Path("./data")
 DATASET_LOCAL_METADATA_PATH = DATASET_LOCAL_BASE_PATH / "trips-metadata"
+DATASET_LOCAL_TRIPS_DATA_PATH = DATASET_LOCAL_BASE_PATH / "trips-data"
 
 DATASET_WEB_URL = "https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page"
 DATASET_WEB_FILE_URL_CSS_SELECTOR = "a[href*='trip-data']"
