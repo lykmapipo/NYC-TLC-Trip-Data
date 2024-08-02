@@ -8,6 +8,7 @@ Usage::
     python extract_zones_data.py
 
 """
+
 import datetime
 import logging
 from pathlib import Path
@@ -59,7 +60,9 @@ def safe_download_file(url=None, **kwargs):
     # file exists, try update
     else:
         logging.info(f"{destination.name} already exists. Try updating ...")
-        local_last_modified_time = datetime.datetime.utcfromtimestamp(destination.lstat().st_mtime)
+        local_last_modified_time = datetime.datetime.utcfromtimestamp(
+            destination.lstat().st_mtime
+        )
 
         server_last_modified_time = local_last_modified_time
         response = requests.head(url)

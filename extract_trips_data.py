@@ -19,8 +19,9 @@ import click
 import pyarrow as pa  # noqa
 import pyarrow.dataset as pds
 import pyarrow.fs as pfs
-from fsspec.implementations.http import HTTPFileSystem
 from joblib import Parallel, delayed
+
+from base import ArrowHTTPFileSystem
 
 TODAY = datetime.date.today()
 
@@ -76,7 +77,7 @@ def _configure_logging():
 def _prepare_source_fs(source=None):
     """Prepare PyArrow source filesystem."""
     if source == RECORD_SOURCE_WEB:
-        web_fs = HTTPFileSystem()
+        web_fs = ArrowHTTPFileSystem()
         web_fs = pfs.PyFileSystem(pfs.FSSpecHandler(web_fs))
         return web_fs
 
@@ -117,16 +118,16 @@ def download_trip_file(
     destination.parent.mkdir(exist_ok=True, parents=True)
     logging.info(f"Downloading {destination.name} ...")
 
-    # fetch local and s3 file modification time
-    s3_modification_time = fragment_file_info.mtime
+    # fetch local and source file modification time
+    source_modification_time = fragment_file_info.mtime
     destination_exists = destination.exists()
     local_modification_time = (
         local_fs.get_file_info(str(destination)).mtime if destination_exists else None
     )
     destination_need_update = (
         local_modification_time
-        and s3_modification_time
-        and (local_modification_time < s3_modification_time)
+        and source_modification_time
+        and (local_modification_time < source_modification_time)
     )
 
     # try download trip file

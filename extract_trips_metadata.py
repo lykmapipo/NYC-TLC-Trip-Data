@@ -26,6 +26,8 @@ from bs4 import BeautifulSoup
 from fsspec.implementations.http import HTTPFileSystem
 from joblib import Parallel, delayed
 
+from base import ArrowHTTPFileSystem
+
 TODAY = datetime.date.today()
 
 WEB_SOURCE_URL = "https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page"
@@ -111,7 +113,7 @@ def _prepare_s3_filesystem():
 def _prepare_web_filesystem():
     """Prepare PyArrow HTTP filesystem using fsspec."""
     logging.info("Prepare Web filesystems ...")
-    web_fs = HTTPFileSystem()
+    web_fs = ArrowHTTPFileSystem()
     web_fs = pfs.PyFileSystem(pfs.FSSpecHandler(web_fs))
     logging.info("Prepare Web filesystems finished.")
     return web_fs
@@ -182,7 +184,7 @@ def extract_trip_file_metadata(fragment=None, **kwargs):
     # time info
     file_year = int(file_parts[2])
     file_month = int(file_parts[3])
-    file_modification_time = fragment_info.mtime  # TODO: fix for web source
+    file_modification_time = fragment_info.mtime
     time_infos = [file_year, file_month, file_modification_time]
 
     # size info
