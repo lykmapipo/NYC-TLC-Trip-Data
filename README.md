@@ -1,6 +1,6 @@
 # NYC-TLC-Trip-Data
 
-Python scripts to download, process, and analyze [NYC Taxi and Limousine Commission Trip Record Data](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page).
+Python scripts to download, process, and analyze [over 3.69 billion](https://github.com/lykmapipo/NYC-TLC-Trip-Data/blob/main/explore_trips_metadata.ipynb) records from the [New York City Taxi and Limousine Commission (TLC) Trip Record Data](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page) dataset, spanning from 2009 to the present.
 
 > 👋 This repository's maintainer is available to hire for [Python](https://www.python.org/)/[Apache Spark](https://spark.apache.org/)/[Apache Arrow](https://arrow.apache.org/docs/index.html)/[Data Engineering](https://en.wikipedia.org/wiki/Data_engineering) consulting projects. To get a cost estimate, send email to lallyelias87@gmail.com (for projects of any size or complexity).
 
