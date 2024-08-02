@@ -3,7 +3,6 @@ Re-usable utilities.
 
 """
 
-import datetime
 import logging
 from email.utils import parsedate_to_datetime
 
@@ -51,7 +50,6 @@ class ArrowHTTPFileSystem(HTTPFileSystem):
         """Call HEAD on the server to get details about the file (size/checksum etc.)"""
 
         # https://github.com/fsspec/filesystem_spec/blob/master/fsspec/implementations/http.py#L815
-        logger = logging.getLogger("fsspec.http")
         kwargs = kwargs.copy()
         ar = kwargs.pop("allow_redirects", True)
         head = kwargs.get("headers", {}).copy()

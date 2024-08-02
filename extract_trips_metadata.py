@@ -13,7 +13,6 @@ import datetime
 import logging
 import os
 import re
-import time
 from pathlib import Path
 
 import click
@@ -23,7 +22,6 @@ import pyarrow.dataset as pds
 import pyarrow.fs as pfs
 import requests
 from bs4 import BeautifulSoup
-from fsspec.implementations.http import HTTPFileSystem
 from joblib import Parallel, delayed
 
 from base import ArrowHTTPFileSystem
@@ -32,8 +30,6 @@ TODAY = datetime.date.today()
 
 WEB_SOURCE_URL = "https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page"
 WEB_FILE_URL_CSS_SELECTOR = "a[href*='trip-data']"
-WEB_PARALLEL_NUM_JOBS = 1
-WEB_REQUEST_DELAY_TIME = abs(WEB_PARALLEL_NUM_JOBS * 3) + 3
 
 AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
@@ -276,8 +272,7 @@ def main(source=RECORD_SOURCE_S3, record_type=None, year=None, months=None, **kw
     logging.info("Discovering trips metadata finished.")
 
     logging.info("Extracting trips metadata ...")
-    n_jobs = WEB_PARALLEL_NUM_JOBS if source == RECORD_SOURCE_WEB else PARALLEL_NUM_JOBS
-    metadata = Parallel(n_jobs=n_jobs, verbose=PARALLEL_VERBOSITY_LEVEL)(
+    metadata = Parallel(n_jobs=PARALLEL_NUM_JOBS, verbose=PARALLEL_VERBOSITY_LEVEL)(
         delayed(extract_trip_file_metadata)(
             fragment=trip_fragment,
             source=source,
