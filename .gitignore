@@ -167,3 +167,4 @@ cython_debug/
 tmp/
 data/trips-metadata/web
 data/trips-metadata/s3
+data/trips-data
