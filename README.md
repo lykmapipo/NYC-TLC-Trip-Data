@@ -9,6 +9,7 @@ Python scripts to download, process, and analyze [over 3.69 billion](https://git
 - [Python 3.8+](https://www.python.org/)
 - [pip 24.2+](https://github.com/pypa/pip)
 - [joblib 1.3+](https://github.com/joblib/joblib)
+- [numpy 1.24.+](https://github.com/numpy/numpy)
 - [pyarrow 14.0+](https://github.com/apache/arrow)
 - [pandas 2.0+](https://github.com/pandas-dev/pandas)
 - [geopandas 0.13+](https://github.com/geopandas/geopandas)
@@ -49,6 +50,11 @@ python extract_zones_data.py
 - To extract [trips data](https://github.com/lykmapipo/NYC-TLC-Trip-Data/tree/main/data/trips-data), run:
 ```sh
 python extract_trips_data.py -s web -t yellow -y 2024 -m 1 -m 2
+```
+
+- To sample [trips data](https://github.com/lykmapipo/NYC-TLC-Trip-Data/tree/main/data/trips-data-sample), run:
+```sh
+python sample_trips_data.py -s web -t yellow -y 2024 -m 1 -f csv
 ```
 
 

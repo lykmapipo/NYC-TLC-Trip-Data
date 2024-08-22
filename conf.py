@@ -8,6 +8,8 @@ import logging
 import os
 from pathlib import Path
 
+RANDOM_SEED = 42
+
 TODAY = datetime.date.today()
 CURRENT_YEAR = TODAY.year
 CURRENT_MONTH = TODAY.month
@@ -34,6 +36,7 @@ DATASET_PARTITIONING = "hive"
 DATASET_LOCAL_BASE_PATH = Path("./data")
 DATASET_LOCAL_METADATA_PATH = DATASET_LOCAL_BASE_PATH / "trips-metadata"
 DATASET_LOCAL_TRIPS_DATA_PATH = DATASET_LOCAL_BASE_PATH / "trips-data"
+DATASET_LOCAL_TRIPS_DATA_SAMPLE_PATH = DATASET_LOCAL_BASE_PATH / "trips-data-sample"
 DATASET_LOCAL_ZONES_DATA_PATH = DATASET_LOCAL_BASE_PATH / "zones-data"
 
 DATASET_WEB_URL = "https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page"
@@ -50,6 +53,7 @@ DATASET_ZONES_DOWNLOAD_URL = f"{DATASET_AWS_CLOUDFRONT_BASE_URL}/misc/taxi_zones
 
 RECORD_SOURCE_WEB = "web"
 RECORD_SOURCE_S3 = "s3"
+RECORD_SOURCE_LOCAL = "local"
 RECORD_SOURCES = [RECORD_SOURCE_WEB, RECORD_SOURCE_S3]
 
 RECORD_TYPES_FHV = "fhv"

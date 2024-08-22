@@ -7,6 +7,7 @@ import logging
 import re
 from email.utils import parsedate_to_datetime
 
+import numpy as np
 import pyarrow.dataset as pds
 import pyarrow.fs as pfs
 import requests
@@ -18,6 +19,7 @@ import conf
 __all__ = [
     "ArrowHTTPFileSystem",
     "configure_logging",
+    "default_rng",
     "discover_dataset",
     "is_allowed_fragment",
     "prepare_local_fs",
@@ -25,6 +27,9 @@ __all__ = [
     "prepare_web_fs",
     "scrape_web_file_urls",
 ]
+
+
+default_rng = np.random.default_rng(conf.RANDOM_SEED)
 
 
 def configure_logging():
@@ -104,7 +109,7 @@ def is_allowed_fragment(fragment=None, **kwargs):
     is_allowed_fragment = (
         (file_record_type == kwargs.get("record_type"))
         and (file_year == kwargs.get("year"))
-        and (file_month in (kwargs.get("months") or []))
+        and (file_month in (kwargs.get("months") or [kwargs.get("month")] or []))
     )
     return is_allowed_fragment
 

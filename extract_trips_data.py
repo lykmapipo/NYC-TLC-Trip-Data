@@ -42,7 +42,7 @@ def _discover_web_dataset(**kwargs):
     """Discover metadata from NYC TLC Trip Data website and AWS CloudFront."""
     record_type = kwargs.get("record_type")
     year = kwargs.get("year")
-    months = kwargs.get("months")
+    months = kwargs.get("months") or [kwargs.get("month")]
 
     file_urls = [
         f"{conf.DATASET_AWS_CLOUDFRONT_BASE_URL}/{url}"
